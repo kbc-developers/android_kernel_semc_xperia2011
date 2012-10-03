@@ -80,7 +80,7 @@ if [ "$BUILD_SELECT" = 'all' -o "$BUILD_SELECT" = 'a' ]; then
   ./_ti_wlan_build.sh clean $OBJ_DIR $INITRAMFS_TMP_DIR
   make clean
   cp -f ./arch/arm/configs/$BUILD_DEFCONFIG $OBJ_DIR/.config
-  make -C $PWD O=$OBJ_DIR oldconfig || exit -1
+  make -C $PWD O=$OBJ_DIR KERNEL_LOCAL_VERSION=$LOCALVERSION oldconfig || exit -1
 fi
 
 if [ "$BUILD_SELECT" != 'image' -a "$BUILD_SELECT" != 'i' ]; then
@@ -89,7 +89,7 @@ if [ "$BUILD_SELECT" != 'image' -a "$BUILD_SELECT" != 'i' ]; then
   if [ -e make.log ]; then
     mv make.log make_old.log
   fi
-  nice -n 10 make O=$OBJ_DIR -j12 2>&1 | tee make.log
+  nice -n 10 make O=$OBJ_DIR KERNEL_LOCAL_VERSION=$LOCALVERSION -j12 2>&1 | tee make.log
 fi
 
 # check compile error

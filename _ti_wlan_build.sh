@@ -17,7 +17,7 @@ export ROOT_DIR=$WLAN_OBJ_DIR/ap
 if [ "$BUILD_TYPE" = 'clean' ]; then
     make clean
 else
-    make
+    make KERNEL_LOCAL_VERSION=$LOCALVERSION -j4
     cp -av *.ko $MODULE_DIR/
 fi
 
@@ -28,7 +28,7 @@ cd $TOP_DIR/ti_wlan/sta/platforms/os/linux
 if [ "$BUILD_TYPE" = 'clean' ]; then
     make clean
 else
-    make
+    make KERNEL_LOCAL_VERSION=$LOCALVERSION -j4
     cp -av *.ko $MODULE_DIR/
 fi
 
