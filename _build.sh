@@ -104,7 +104,7 @@ fi
 # TI WLAN module build
 ./_ti_wlan_build.sh build $KERNEL_DIR/$OBJ_DIR $INITRAMFS_TMP_DIR
 
-+# *.ko copy
+# *.ko copy
 #find -name '*.ko' -exec cp -av {} $INITRAMFS_TMP_DIR/lib/modules/ \;
 cp -av ./out/SEMC/obj/net/sched/cls_flow.ko $INITRAMFS_TMP_DIR/lib/modules/
 cp -av ./out/SEMC/obj/net/sched/sch_dsmark.ko $INITRAMFS_TMP_DIR/lib/modules/
