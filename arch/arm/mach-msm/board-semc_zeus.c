@@ -71,7 +71,7 @@
 #include "timer.h"
 #include "socinfo.h"
 #include "cpufreq.h"
-#include <linux/usb/android_composite.h>
+#include <linux/usb/android.h>
 #ifdef CONFIG_USB_ANDROID_ACCESSORY
 #include <linux/usb/f_accessory.h>
 #endif
@@ -111,9 +111,9 @@
 #define AKM8975_GPIO				92
 #define NOVATEK_GPIO_RESET			157
 
-#define MSM_PMEM_SF_SIZE	0x500000
+#define MSM_PMEM_SF_SIZE	0x1E00000
 #define MSM_FB_SIZE		0x500000
-#define MSM_GPU_PHYS_SIZE       SZ_2M
+#define MSM_GPU_PHYS_SIZE       SZ_4M
 #define MSM_PMEM_CAMERA_SIZE    0x2000000
 #define MSM_PMEM_ADSP_SIZE      0x1800000
 #define PMEM_KERNEL_EBI1_SIZE   0x600000
@@ -237,8 +237,10 @@ static int pm8058_gpios_init(void)
 static const unsigned int keymap_game[] = {
 	KEY(7, 0, KEY_VOLUMEUP),   /* DBZ2, VOL_UP */
 	KEY(7, 1, KEY_VOLUMEDOWN), /* DBZ2, VOL_DOWN */
+#ifdef CONFIG_INPUT_JOYSTICK
 	KEY(7, 2, BTN_SELECT),     /* DBZ2, S1 */
 	KEY(7, 3, KEY_ENTER),      /* DBZ2, S2 */
+#endif
 };
 
 static struct resource resources_keypad_game[] = {
@@ -1120,153 +1122,6 @@ static struct platform_device msm_device_adspdec = {
 		.platform_data = &msm_device_adspdec_database},
 };
 
-static char *usb_functions_msc[] = {
-	"usb_mass_storage",
-};
-
-static char *usb_functions_msc_adb[] = {
-	"adb",
-	"usb_mass_storage",
-};
-
-static char *usb_functions_msc_adb_eng[] = {
-	"usb_mass_storage",
-	"adb",
-	"modem",
-	"nmea",
-	"diag",
-};
-
-#if defined(CONFIG_USB_ANDROID_MTP_ARICENT)
-static char *usb_functions_mtp[] = {
-	"mtp",
-};
-
-static char *usb_functions_mtp_adb[] = {
-	"mtp",
-	"adb",
-};
-
-static char *usb_functions_mtp_msc[] = {
-	"mtp",
-	"usb_mass_storage",
-};
-
-static char *usb_functions_mtp_adb_eng[] = {
-	"mtp",
-	"adb",
-	"modem",
-	"nmea",
-	"diag",
-};
-#endif
-
-static char *usb_functions_rndis[] = {
-	"rndis",
-};
-
-static char *usb_functions_rndis_adb[] = {
-	"rndis",
-	"adb",
-};
-
-static char *usb_functions_diag[] = {
-	"adb",
-	"modem",
-	"diag",
-};
-
-#ifdef CONFIG_USB_ANDROID_ACCESSORY
-static char *usb_functions_accessory[] = { "accessory" };
-static char *usb_functions_accessory_adb[] = { "accessory", "adb" };
-#endif
-
-static char *usb_functions_all[] = {
-	"rndis",
-#ifdef CONFIG_USB_ANDROID_ACCESSORY
-	"accessory",
-#endif
-	"usb_mass_storage",
-#if defined(CONFIG_USB_ANDROID_MTP_ARICENT)
-	"mtp",
-#endif
-	"adb",
-	"modem",
-	"nmea",
-	"diag",
-};
-
-static struct android_usb_product usb_products[] = {
-	{
-		.product_id	= 0xE000 | CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_msc),
-		.functions	= usb_functions_msc,
-	},
-	{
-		.product_id	= 0x6000 | CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_msc_adb),
-		.functions	= usb_functions_msc_adb,
-	},
-#if defined(CONFIG_USB_ANDROID_MTP_ARICENT)
-	{
-		.product_id	= 0x0000 | CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_mtp),
-		.functions	= usb_functions_mtp,
-	},
-	{
-		.product_id	= 0x5000 | CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_mtp_adb),
-		.functions	= usb_functions_mtp_adb,
-	},
-	{
-		.product_id	= 0x4000 | CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_mtp_msc),
-		.functions	= usb_functions_mtp_msc,
-	},
-#endif
-	{
-		.product_id	= 0x7000 | CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_rndis),
-		.functions	= usb_functions_rndis,
-	},
-	{
-		.product_id	= 0x8000 | CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_rndis_adb),
-		.functions	= usb_functions_rndis_adb,
-	},
-	{
-		.product_id	= 0x9000 |  CONFIG_USB_PRODUCT_SUFFIX,
-		.num_functions	= ARRAY_SIZE(usb_functions_diag),
-		.functions	= usb_functions_diag,
-	},
-#if defined(CONFIG_USB_ANDROID_MTP_ARICENT)
-	{
-		.product_id	= 0x5146,
-		.num_functions	= ARRAY_SIZE(usb_functions_mtp_adb_eng),
-		.functions	= usb_functions_mtp_adb_eng,
-	},
-#endif
-	{
-		.product_id	= 0x6146,
-		.num_functions	= ARRAY_SIZE(usb_functions_msc_adb_eng),
-		.functions	= usb_functions_msc_adb_eng,
-	},
-#ifdef CONFIG_USB_ANDROID_ACCESSORY
-	{
-		.vendor_id      = USB_ACCESSORY_VENDOR_ID,
-		.product_id     = USB_ACCESSORY_PRODUCT_ID,
-		.num_functions  = ARRAY_SIZE(usb_functions_accessory),
-		.functions      = usb_functions_accessory,
-	},
-	{
-		.vendor_id      = USB_ACCESSORY_VENDOR_ID,
-		.product_id     = USB_ACCESSORY_ADB_PRODUCT_ID,
-		.num_functions  = ARRAY_SIZE(usb_functions_accessory_adb),
-		.functions      = usb_functions_accessory_adb,
-	},
-#endif
-};
-
 static struct usb_mass_storage_platform_data mass_storage_pdata = {
 	.nluns		= 1,
 	.vendor		= "SEMC",
@@ -1277,6 +1132,12 @@ static struct usb_mass_storage_platform_data mass_storage_pdata = {
 	.cdrom_vendor	= "SEMC",
 	.cdrom_product	= "CD-ROM",
 	.cdrom_release	= 0x0100,
+
+	/* EUI-64 based identifier format */
+	.eui64_id = {
+		.ieee_company_id = {0x00, 0x0A, 0xD9},
+		.vendor_specific_ext_field = {0x00, 0x00, 0x00, 0x00, 0x00},
+	},
 };
 
 static struct platform_device mass_storage_device = {
@@ -1303,14 +1164,10 @@ static struct platform_device rndis_device = {
 
 static struct android_usb_platform_data android_usb_pdata = {
 	.vendor_id		= 0x0FCE,
-	.product_id		= 0xE000 | CONFIG_USB_PRODUCT_SUFFIX,
 	.version		= 0x0100,
-	.num_products		= ARRAY_SIZE(usb_products),
-	.products		= usb_products,
-	.num_functions		= ARRAY_SIZE(usb_functions_all),
-	.functions		= usb_functions_all,
 	.product_name		= "SEMC HSUSB Device",
 	.manufacturer_name	= "SEMC",
+	.usb_mass_storage_device = &mass_storage_device,
 	/* .serial_number filled_in by board_serialno_setup */
 };
 
@@ -1357,6 +1214,7 @@ static int __init board_serialno_setup(char *serialno)
 	}
 	usb_serial_number[20] = '\0';
 	android_usb_pdata.serial_number = usb_serial_number;
+	mass_storage_pdata.serial_number = usb_serial_number;
 
 	printk(KERN_INFO "USB serial number: %s\n",
 			android_usb_pdata.serial_number);
@@ -2121,72 +1979,114 @@ static struct kgsl_cpufreq_voter kgsl_cpufreq_voter = {
 	},
 };
 
-static void kgsl_idle_cb(int idle)
-{
-	if (idle != kgsl_cpufreq_voter.idle) {
-		kgsl_cpufreq_voter.idle = idle;
-		msm_cpufreq_voter_update(&kgsl_cpufreq_voter.voter);
-	}
-}
-
-static struct kgsl_platform_data kgsl_pdata = {
-	/* AXI rates in KHz */
-	.high_axi_3d = 192000,
-	.high_axi_2d = 192000,
-
-	.max_grp2d_freq = 0,
-	.min_grp2d_freq = 0,
-	.set_grp2d_async = NULL,	/* HW workaround, run Z180 SYNC @ 192 MHZ */
-	.max_grp3d_freq = 245760000,
-	.min_grp3d_freq = 192 * 1000*1000,
-	.set_grp3d_async = set_grp3d_async,
-	.imem_clk_name = "imem_clk",
-	.grp3d_clk_name = "grp_clk",
-	.grp2d0_clk_name = "grp_2d_clk",
-	.idle_callback = kgsl_idle_cb,
+struct resource kgsl_3d0_resources[] = {
+	{
+		.name  = KGSL_3D0_REG_MEMORY,
+		.start = 0xA3500000, /* 3D GRP address */
+		.end = 0xA351ffff,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.name = KGSL_3D0_IRQ,
+		.start = INT_GRP_3D,
+		.end = INT_GRP_3D,
+		.flags = IORESOURCE_IRQ,
+	},
 };
 
-static struct resource kgsl_resources[] = {
-	{
-	 .name = "kgsl_reg_memory",
-	 .start = 0xA3500000,	/* 3D GRP address */
-	 .end = 0xA351ffff,
-	 .flags = IORESOURCE_MEM,
-	 },
-	{
-	 .name = "kgsl_phys_memory",
-	 .start = 0,
-	 .end = 0,
-	 .flags = IORESOURCE_MEM,
-	 },
-	{
-	 .name = "kgsl_yamato_irq",
-	 .start = INT_GRP_3D,
-	 .end = INT_GRP_3D,
-	 .flags = IORESOURCE_IRQ,
-	 },
-	{
-	 .name = "kgsl_2d0_reg_memory",
-	 .start = 0xA3900000,	/* Z180 base address */
-	 .end = 0xA3900FFF,
-	 .flags = IORESOURCE_MEM,
-	 },
-	{
-	 .name = "kgsl_2d0_irq",
-	 .start = INT_GRP_2D,
-	 .end = INT_GRP_2D,
-	 .flags = IORESOURCE_IRQ,
-	 },
-};
-
-static struct platform_device msm_device_kgsl = {
-	.name = "kgsl",
-	.id = -1,
-	.num_resources = ARRAY_SIZE(kgsl_resources),
-	.resource = kgsl_resources,
-	.dev = {
-		.platform_data = &kgsl_pdata,
+static struct kgsl_device_platform_data kgsl_3d0_pdata = {
+	.pwr_data = {
+		.pwrlevel = {
+			{
+				.gpu_freq = 245760000,
+				.bus_freq = 192000000,
+				.io_fraction = 0,
+			},
+			{
+				.gpu_freq = 192000000,
+				.bus_freq = 152000000,
+				.io_fraction = 33,
+			},
+			{
+				.gpu_freq = 192000000,
+				.bus_freq = 0,
+				.io_fraction = 100,
+			},
 		},
+		.init_level = 0,
+		.num_levels = 3,
+		.set_grp_async = set_grp3d_async,
+		.idle_timeout = HZ/20,
+		.nap_allowed = true,
+	},
+	.clk = {
+		.name = {
+			.clk = "grp_clk",
+			.pclk = "grp_pclk",
+		},
+	},
+	.imem_clk_name = {
+		.clk = "imem_clk",
+		.pclk = NULL,
+	},
+};
+
+struct platform_device msm_kgsl_3d0 = {
+	.name = "kgsl-3d0",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(kgsl_3d0_resources),
+	.resource = kgsl_3d0_resources,
+	.dev = {
+		.platform_data = &kgsl_3d0_pdata,
+	},
+};
+
+static struct resource kgsl_2d0_resources[] = {
+	{
+		.name = KGSL_2D0_REG_MEMORY,
+		.start = 0xA3900000, /* Z180 base address */
+		.end = 0xA3900FFF,
+		.flags = IORESOURCE_MEM,
+	},
+	{
+		.name = KGSL_2D0_IRQ,
+		.start = INT_GRP_2D,
+		.end = INT_GRP_2D,
+		.flags = IORESOURCE_IRQ,
+	},
+};
+
+static struct kgsl_device_platform_data kgsl_2d0_pdata = {
+	.pwr_data = {
+		.pwrlevel = {
+			{
+				.gpu_freq = 0,
+				.bus_freq = 192000000,
+			},
+		},
+		.init_level = 0,
+		.num_levels = 1,
+		/* HW workaround, run Z180 SYNC @ 192 MHZ */
+		.set_grp_async = NULL,
+		.idle_timeout = HZ/10,
+		.nap_allowed = true,
+	},
+	.clk = {
+		.name = {
+			.clk = "grp_2d_clk",
+			.pclk = "grp_2d_pclk",
+		},
+	},
+};
+
+struct platform_device msm_kgsl_2d0 = {
+	.name = "kgsl-2d0",
+	.id = 0,
+	.num_resources = ARRAY_SIZE(kgsl_2d0_resources),
+	.resource = kgsl_2d0_resources,
+	.dev = {
+		.platform_data = &kgsl_2d0_pdata,
+	},
 };
 
 static int msm_fb_mddi_sel_clk(u32 *clk_rate)
@@ -2634,7 +2534,8 @@ static struct platform_device *devices[] __initdata = {
 	&msm_aux_pcm_device,
 	&msm_device_adspdec,
 	&qup_device_i2c,
-	&msm_device_kgsl,
+	&msm_kgsl_3d0,
+	&msm_kgsl_2d0,
 	&msm_device_uart3,
 	&msm_device_vidc_720p,
 	&msm_gemini_device,
@@ -3579,15 +3480,6 @@ static void __init msm7x30_allocate_memory_regions(void)
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
 	pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
 		size, addr, __pa(addr));
-
-	size = gpu_phys_size;
-	if (size) {
-		addr = alloc_bootmem(size);
-		kgsl_resources[1].start = __pa(addr);
-		kgsl_resources[1].end = kgsl_resources[1].start + size - 1;
-		pr_info("allocating %lu bytes at %p (%lx physical) for "
-			"KGSL\n", size, addr, __pa(addr));
-	}
 
 	size = pmem_adsp_size;
 

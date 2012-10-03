@@ -1013,10 +1013,14 @@ static void synaptics_funcarea_initialize(struct synaptics_clearpad *this)
 					     funcarea->x1, funcarea->x2, 0, 0);
 			input_set_abs_params(this->input, ABS_MT_POSITION_Y,
 					     funcarea->y1, funcarea->y2, 0, 0);
+			input_set_abs_params(this->input, ABS_MT_PRESSURE,
+					     0, SYNAPTICS_MAX_Z_VALUE, 0, 0);
 			input_set_abs_params(this->input, ABS_MT_TOUCH_MAJOR,
 					0, SYNAPTICS_MAX_W_VALUE + 1, 0, 0);
-			input_set_abs_params(this->input, ABS_MT_WIDTH_MAJOR,
+			input_set_abs_params(this->input, ABS_MT_TOUCH_MINOR,
 					0, SYNAPTICS_MAX_W_VALUE + 1, 0, 0);
+			input_set_abs_params(this->input, ABS_MT_ORIENTATION,
+					-1, 1, 0, 0);
 			break;
 		case SYN_FUNCAREA_BUTTON:
 			button = (struct synaptics_button *)funcarea->data;
@@ -1086,8 +1090,7 @@ static int synaptics_funcarea_down(struct synaptics_clearpad *this,
 				   struct synaptics_pointer *pointer,
 				   int id, int x, int y, int wx, int wy, int z)
 {
-	int touch_major;
-	int width_major;
+	int touch_major, touch_minor;
 	struct synaptics_funcarea *funcarea = this->funcarea;
 	struct synaptics_button *button;
 	struct synaptics_pointer previous_pointer;
@@ -1123,15 +1126,16 @@ static int synaptics_funcarea_down(struct synaptics_clearpad *this,
 		synaptics_funcarea_crop(pointer->funcarea, &pointer->cur);
 		LOG_EVENT(this, "pointer %d (x,y)=(%d,%d) w=(%d,%d) z=%d\n",
 			  id, pointer->cur.x, pointer->cur.y, wx, wy, z);
-		width_major = max(wx, wy) + 1;
-		touch_major = max(wx, wy) * z / SYNAPTICS_MAX_Z_VALUE + 1;
+		touch_major = max(wx, wy) + 1;
+		touch_minor = min(wx, wy) + 1;
 		input_report_abs(this->input, ABS_MT_TRACKING_ID, id);
 		input_report_abs(this->input, ABS_MT_POSITION_X,
 				 pointer->cur.x);
 		input_report_abs(this->input, ABS_MT_POSITION_Y,
 				 pointer->cur.y);
+		input_report_abs(this->input, ABS_MT_PRESSURE, z);
 		input_report_abs(this->input, ABS_MT_TOUCH_MAJOR, touch_major);
-		input_report_abs(this->input, ABS_MT_WIDTH_MAJOR, width_major);
+		input_report_abs(this->input, ABS_MT_TOUCH_MINOR, touch_minor);
 		input_report_abs(this->input, ABS_MT_ORIENTATION, (wx > wy));
 		input_mt_sync(this->input);
 		return 1;
@@ -1384,8 +1388,6 @@ static int synaptics_clearpad_device_open(struct input_dev *dev)
 
 	LOG_STAT(this, "state=%s\n", state_name[this->state]);
 
-	if (this->state == SYN_STATE_INIT)
-		return 0;
 	if (this->state == SYN_STATE_DISABLED)
 		return -ENODEV;
 	if (this->state != SYN_STATE_RUNNING)
@@ -1777,9 +1779,9 @@ static int synaptics_clearpad_input_init(struct synaptics_clearpad *this)
 
 	set_bit(ABS_MT_TRACKING_ID, this->input->absbit);
 	set_bit(ABS_MT_ORIENTATION, this->input->absbit);
+	set_bit(ABS_MT_PRESSURE, this->input->absbit);
 	set_bit(ABS_MT_TOUCH_MAJOR, this->input->absbit);
 	set_bit(ABS_MT_TOUCH_MINOR, this->input->absbit);
-	set_bit(ABS_MT_WIDTH_MAJOR, this->input->absbit);
 
 	dev_info(&this->pdev->dev, "Touch area [%d, %d, %d, %d]\n",
 		 this->extents.x_min, this->extents.y_min,
@@ -1926,6 +1928,10 @@ static int __devinit clearpad_probe(struct platform_device *pdev)
 	}
 	this->state = SYN_STATE_RUNNING;
 
+	rc = synaptics_clearpad_set_power(this);
+	if (rc)
+		goto err_input_unregister;
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	this->early_suspend.suspend = synaptics_clearpad_early_suspend;
 	this->early_suspend.resume = synaptics_clearpad_late_resume;
@@ -1936,7 +1942,7 @@ static int __devinit clearpad_probe(struct platform_device *pdev)
 	rc = sysfs_create_group(&this->input->dev.kobj,
 				&synaptics_clearpad_attrs);
 	if (rc)
-		goto err_unregister_early_suspend;
+		goto err_input_unregister;
 
 	LOCK(this);
 	rc = request_irq(this->pdata->irq, &synaptics_clearpad_irq,
@@ -1947,26 +1953,15 @@ static int __devinit clearpad_probe(struct platform_device *pdev)
 		dev_err(&this->pdev->dev,
 		       "irq %d busy?\n", this->pdata->irq);
 		UNLOCK(this);
-		goto err_sysfs;
+		goto err_input_unregister;
 	}
-	this->irq_mask |= IRQ_SET_POWER;
+	disable_irq(this->pdata->irq);
 	UNLOCK(this);
-
-	rc = synaptics_clearpad_set_power(this);
-	if (rc)
-		goto err_irq;
 
 	return 0;
 
-err_irq:
-	free_irq(this->pdata->irq, &this->pdev->dev);
-err_sysfs:
-	sysfs_remove_group(&this->input->dev.kobj, &synaptics_clearpad_attrs);
-err_unregister_early_suspend:
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	unregister_early_suspend(&this->early_suspend);
-#endif
 err_input_unregister:
+	input_set_drvdata(this->input, NULL);
 	input_unregister_device(this->input);
 err_gpio_teardown:
 	if (this->pdata->gpio_configure)
