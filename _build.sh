@@ -104,9 +104,17 @@ fi
 # TI WLAN module build
 ./_ti_wlan_build.sh build $KERNEL_DIR/$OBJ_DIR $INITRAMFS_TMP_DIR
 
-
-# *.ko replace
-find -name '*.ko' -exec cp -av {} $INITRAMFS_TMP_DIR/lib/modules/ \;
++# *.ko copy
+#find -name '*.ko' -exec cp -av {} $INITRAMFS_TMP_DIR/lib/modules/ \;
+cp -av ./out/SEMC/obj/net/sched/cls_flow.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/net/sched/sch_dsmark.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/arch/arm/oprofile/oprofile.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/arch/arm/mach-msm/reset_modem.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/arch/arm/common/cpaccess.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/drivers/net/wireless/libra/librasdioif.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/drivers/input/evbug.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/drivers/scsi/scsi_wait_scan.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/crypto/ansi_cprng.ko $INITRAMFS_TMP_DIR/lib/modules/
 
 echo ""
 echo "=====> CREATE RELEASE IMAGE"
