@@ -181,3 +181,4 @@ EXTRA_CFLAGS += -fsigned-char -Werror
 EXTRA_CFLAGS += -D __LINUX__
 EXTRA_CFLAGS += $(DK_DEFINES)
 EXTRA_CFLAGS += $(PFORM_DEFINES)
+EXTRA_CFLAGS += -Wno-enum-compare -Wno-switch

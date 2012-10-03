@@ -77,6 +77,7 @@ cpoy_initramfs
 if [ "$BUILD_SELECT" = 'all' -o "$BUILD_SELECT" = 'a' ]; then
   echo ""
   echo "=====> cleaning"
+  ./_ti_wlan_build.sh clean $OBJ_DIR $INITRAMFS_TMP_DIR
   make clean
   cp -f ./arch/arm/configs/$BUILD_DEFCONFIG $OBJ_DIR/.config
   make -C $PWD O=$OBJ_DIR oldconfig || exit -1
@@ -99,6 +100,10 @@ if [ "$COMPILE_ERROR" ]; then
   grep 'error:' ./make.log
   exit -1
 fi
+
+# TI WLAN module build
+./_ti_wlan_build.sh build $OBJ_DIR $INITRAMFS_TMP_DIR
+
 
 # *.ko replace
 find -name '*.ko' -exec cp -av {} $INITRAMFS_TMP_DIR/lib/modules/ \;
