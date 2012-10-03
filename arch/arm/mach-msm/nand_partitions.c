@@ -83,6 +83,23 @@ static int __init parse_tag_msm_partition(const struct tag *tag)
 		ptn++;
 	}
 
+#ifdef CONFIG_MACH_SEMC_URUSHI
+	{
+		const char boot[] = "boot\0\0\0\0\0\0\0\0\0\0\0";
+		memcpy(name, boot, 15);
+		name[15] = 0;
+		ptn->name = name;
+		ptn->offset = 0x148;
+		ptn->size = 0x32;
+
+		printk(KERN_INFO "Partition (from atag) %s "
+				"-- Offset:%llx Size:%llx\n",
+				ptn->name, ptn->offset, ptn->size);
+
+		count++;
+	}
+#endif
+
 	msm_nand_data.nr_parts = count;
 	msm_nand_data.parts = msm_nand_partitions;
 
