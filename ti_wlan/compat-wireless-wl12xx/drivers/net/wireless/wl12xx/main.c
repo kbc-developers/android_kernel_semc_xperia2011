@@ -1137,8 +1137,32 @@ static int wl12xx_fetch_firmware(struct wl1271 *wl, bool plt)
 	ret = request_firmware(&fw, fw_name, wl1271_wl_to_dev(wl));
 
 	if (ret < 0) {
-		wl1271_error("could not get firmware: %d", ret);
-		return ret;
+		if (plt) {
+			if (wl->fw_type == WL12XX_FW_TYPE_PLT)
+				return 0;
+
+			if (wl->chip.id == CHIP_ID_1283_PG20)
+				fw_name = FW_DIR_NAME"/"WL128X_PLT_FW_NAME;
+			else
+				fw_name	= FW_DIR_NAME"/"WL1271_PLT_FW_NAME;
+		} else {
+			if (wl->fw_type == WL12XX_FW_TYPE_NORMAL)
+				return 0;
+
+			if (wl->chip.id == CHIP_ID_1283_PG20)
+				fw_name = FW_DIR_NAME"/"WL128X_FW_NAME;
+			else
+				fw_name	= FW_DIR_NAME"/"WL1271_FW_NAME;
+		}
+
+		wl1271_debug(DEBUG_BOOT, "booting firmware %s", fw_name);
+
+		ret = request_firmware(&fw, fw_name, wl1271_wl_to_dev(wl));
+
+		if (ret < 0) {
+			wl1271_error("could not get firmware: %d", ret);
+			return ret;
+		}
 	}
 
 	if (fw->size % 4) {
@@ -1180,8 +1204,11 @@ static int wl1271_fetch_nvs(struct wl1271 *wl)
 	ret = request_firmware(&fw, WL12XX_NVS_NAME, wl1271_wl_to_dev(wl));
 
 	if (ret < 0) {
-		wl1271_error("could not get nvs file: %d", ret);
-		return ret;
+		ret = request_firmware(&fw, FW_DIR_NAME"/"WL12XX_NVS_NAME, wl1271_wl_to_dev(wl));
+		if (ret < 0) {
+			wl1271_error("could not get nvs file: %d", ret);
+			return ret;
+		}
 	}
 
 	wl->nvs = kmemdup(fw->data, fw->size, GFP_KERNEL);

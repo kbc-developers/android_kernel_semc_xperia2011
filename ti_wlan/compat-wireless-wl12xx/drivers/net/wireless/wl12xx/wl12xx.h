@@ -133,6 +133,7 @@ extern u32 wl12xx_debug_level;
 				  CFG_RX_ASSOC_EN)
 
 
+#define FW_DIR_NAME "ti-connectivity"
 
 #define WL1271_FW_NAME "wl1271-fw-multirole-roc.bin"
 #define WL1271_PLT_FW_NAME "wl1271-fw-multirole-plt.bin"
