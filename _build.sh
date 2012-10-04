@@ -130,6 +130,13 @@ echo "----- Making $IMAGE_NAME ramdisk ------"
 echo "----- Making $IMAGE_NAME image ------"
 ./release-tools/mkbootimg --base 0x00200000 --kernel $BIN_DIR/kernel --ramdisk $BIN_DIR/ramdisk-$IMAGE_NAME.img --output $BIN_DIR/$IMAGE_NAME.img
 
+# size check
+FILE_SIZE=`wc -c $BIN_DIR/$IMAGE_NAME.img | awk '{print $1}'`
+if [ $FILE_SIZE -gt 13107200 ]; then
+    echo "FATAL: boot image size over. image size = $FILE_SIZE > 13107200 byte"
+    exit -1
+fi
+
 # create cwm image
 cd $BIN_DIR
 if [ -d tmp ]; then
