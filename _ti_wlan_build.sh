@@ -11,7 +11,7 @@ cd $TOP_DIR/ti_wlan/compat-wireless-wl12xx
 ./scripts/driver-select wl12xx
 
 if [ "$BUILD_TYPE" = 'clean' ]; then
-    make KLIB=$OBJ_DIR KLIB_BUILD=$OBJ_DIR ARCH=arm CROSS_COMPILE=$CROSS_COMPILE KERNEL_LOCAL_VERSION=$LOCALVERSION clean
+    make clean
 else
     make KLIB=$OBJ_DIR KLIB_BUILD=$OBJ_DIR ARCH=arm CROSS_COMPILE=$CROSS_COMPILE KERNEL_LOCAL_VERSION=$LOCALVERSION -j1
 
