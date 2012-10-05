@@ -111,6 +111,14 @@ fi
 # *.ko copy
 #find -name '*.ko' -exec cp -av {} $INITRAMFS_TMP_DIR/lib/modules/ \;
 cp -av ./out/SEMC/obj/drivers/scsi/scsi_wait_scan.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/net/sched/cls_flow.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/net/sched/sch_dsmark.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/arch/arm/oprofile/oprofile.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/arch/arm/mach-msm/reset_modem.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/arch/arm/common/cpaccess.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/drivers/net/wireless/libra/librasdioif.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/drivers/input/evbug.ko $INITRAMFS_TMP_DIR/lib/modules/
+cp -av ./out/SEMC/obj/crypto/ansi_cprng.ko $INITRAMFS_TMP_DIR/lib/modules/
 
 echo ""
 echo "=====> CREATE RELEASE IMAGE"
@@ -126,7 +134,6 @@ echo "----- Making uncompressed $IMAGE_NAME ramdisk ------"
 ./release-tools/mkbootfs $INITRAMFS_TMP_DIR > $BIN_DIR/ramdisk-$IMAGE_NAME.cpio
 echo "----- Making $IMAGE_NAME ramdisk ------"
 ./release-tools/minigzip < $BIN_DIR/ramdisk-$IMAGE_NAME.cpio > $BIN_DIR/ramdisk-$IMAGE_NAME.img
-#lzma --compress $BIN_DIR/ramdisk-$IMAGE_NAME.cpio --keep --stdout > $BIN_DIR/ramdisk-$IMAGE_NAME.img
 echo "----- Making $IMAGE_NAME image ------"
 ./release-tools/mkbootimg --base 0x00200000 --kernel $BIN_DIR/kernel --ramdisk $BIN_DIR/ramdisk-$IMAGE_NAME.img --output $BIN_DIR/$IMAGE_NAME.img
 
