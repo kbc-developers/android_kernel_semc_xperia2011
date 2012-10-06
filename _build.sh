@@ -141,6 +141,7 @@ echo "----- Making $IMAGE_NAME image ------"
 FILE_SIZE=`wc -c $BIN_DIR/$IMAGE_NAME.img | awk '{print $1}'`
 if [ $FILE_SIZE -gt 13107200 ]; then
     echo "FATAL: boot image size over. image size = $FILE_SIZE > 13107200 byte"
+    rm $BIN_DIR/$IMAGE_NAME.img
     exit -1
 fi
 
