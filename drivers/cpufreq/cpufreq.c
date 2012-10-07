@@ -46,6 +46,8 @@ static DEFINE_PER_CPU(char[CPUFREQ_NAME_LEN], cpufreq_cpu_governor);
 #endif
 static DEFINE_SPINLOCK(cpufreq_driver_lock);
 
+extern unsigned int msm_cpufreq_limit;
+
 /*
  * cpu_policy_rwsem is a per CPU reader-writer semaphore designed to cure
  * all cpufreq/hotplug/workqueue/etc related lock issues.
@@ -1688,6 +1690,8 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				struct cpufreq_policy *policy)
 {
 	int ret = 0;
+
+	msm_cpufreq_limit = policy->max;
 
 	cpufreq_debug_disable_ratelimit();
 	dprintk("setting new policy for CPU %u: %u - %u kHz\n", policy->cpu,

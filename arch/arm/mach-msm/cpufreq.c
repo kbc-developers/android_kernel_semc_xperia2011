@@ -26,6 +26,8 @@
 #include "acpuclock.h"
 #include "cpufreq.h"
 
+extern unsigned int msm_cpufreq_limit;
+
 #ifdef CONFIG_SMP
 struct cpufreq_work_struct {
 	struct work_struct work;
@@ -98,6 +100,10 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 	/* race condition ok */
 	if (msm_cpufreq_vote == MSM_CPUFREQ_ACTIVE)
 		new_freq = policy->max;
+
+
+	if (new_freq > msm_cpufreq_limit)
+		new_freq = msm_cpufreq_limit;
 
 	freqs.old = policy->cur;
 	freqs.new = new_freq;
@@ -189,11 +195,13 @@ static int __cpuinit msm_cpufreq_init(struct cpufreq_policy *policy)
 		policy->cpuinfo.min_freq = CONFIG_MSM_CPU_FREQ_MIN;
 		policy->cpuinfo.max_freq = CONFIG_MSM_CPU_FREQ_MAX;
 #endif
+		policy->cpuinfo.max_freq = msm_cpufreq_limit;
 	}
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
 	policy->min = CONFIG_MSM_CPU_FREQ_MIN;
 	policy->max = CONFIG_MSM_CPU_FREQ_MAX;
 #endif
+	policy->max = msm_cpufreq_limit;
 
 	policy->cpuinfo.transition_latency =
 		acpuclk_get_switch_time() * NSEC_PER_USEC;

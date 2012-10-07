@@ -57,6 +57,9 @@
 #define SEMC_ACPU_MIN_UV_MV 750U
 #define SEMC_ACPU_MAX_UV_MV 1525U
 
+#define ACPU_DEFAULT_FREQ_MAX 1401600
+unsigned int msm_cpufreq_limit = ACPU_DEFAULT_FREQ_MAX;
+
 struct clock_state {
 	struct clkctl_acpu_speed	*current_speed;
 	struct mutex			lock;
@@ -216,6 +219,12 @@ int acpuclk_set_rate(int cpu, unsigned long rate, enum setrate_reason reason)
 		goto out;
 	}
 
+	while (tgt_s->acpu_clk_khz > msm_cpufreq_limit) {
+		tgt_s--;
+	}
+	if (tgt_s->acpu_clk_khz == strt_s->acpu_clk_khz)
+		goto out;
+
 	if (reason == SETRATE_CPUFREQ) {
 		/* Increase VDD if needed. */
 		if (tgt_s->vdd_mv > strt_s->vdd_mv) {
@@ -368,6 +377,10 @@ static void __init acpuclk_init(void)
 	default:
 		pr_err("Error - ACPU clock reports invalid source\n");
 		return;
+	}
+
+	while (s->acpu_clk_khz > ACPU_DEFAULT_FREQ_MAX) {
+		s--;
 	}
 
 	/* Set initial ACPU VDD. */
