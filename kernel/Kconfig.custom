@@ -1,0 +1,28 @@
+#
+# Kernel Custom Configuration
+#
+
+comment "Custom Configuration"
+
+choice
+	prompt "Build target"
+	default BUILD_TARGET_SEMC
+	help
+	   This option select a build target.
+
+config BUILD_TARGET_SEMC
+	bool "Sony Ericsson Mobile Communications"
+	help
+	 This option makes to select build target SEMC ROM.
+
+config BUILD_TARGET_AOSP
+	bool "Android Open Source Project"
+	help
+	 This option makes to select build target AOSP ROM.
+
+config BUILD_TARGET_MULTI
+	bool "Multi"
+	help
+	 This option makes to select build target Multi ROM.
+endchoice
+
