@@ -287,6 +287,7 @@ struct synaptics_clearpad {
 	char result_info[SYNAPTICS_STRING_LENGTH + 1];
 	wait_queue_head_t task_none_wq;
 	bool flash_requested;
+	bool notify_up_event;
 };
 
 static char *make_string(u8 *array, size_t size)
@@ -1163,6 +1164,10 @@ static int synaptics_funcarea_up(struct synaptics_clearpad *this,
 	switch (pointer->funcarea->func) {
 	case SYN_FUNCAREA_INSENSIBLE:
 	case SYN_FUNCAREA_POINTER:
+		if (this->notify_up_event) {
+			input_report_abs(this->input, ABS_MT_TRACKING_ID, -1);
+			input_mt_sync(this->input);
+		}
 		break;
 	case SYN_FUNCAREA_BUTTON:
 	case SYN_FUNCAREA_BTN_INBOUND:
@@ -1735,6 +1740,20 @@ err_invalid_arg:
 	return -EINVAL;
 }
 
+static ssize_t synaptics_clearpad_notify_up_event_store(struct device *dev,
+		struct device_attribute *attr,
+		const char *buf, size_t size)
+{
+	struct synaptics_clearpad *this = dev_get_drvdata(dev);
+	int enable = 0;
+	if (sscanf(buf, "%d\n", &enable) > 0) {
+		this->notify_up_event = enable ? true : false;
+	} else {
+		dev_err(&this->pdev->dev, "illegal command\n");
+	}
+	return size;
+}
+
 static DEVICE_ATTR(fwinfo, 0600, synaptics_clearpad_state_show, 0);
 static DEVICE_ATTR(fwfamily, 0600, synaptics_clearpad_state_show, 0);
 static DEVICE_ATTR(fwrevision, 0604, synaptics_clearpad_state_show, 0);
@@ -1742,6 +1761,7 @@ static DEVICE_ATTR(fwtask, 0600, synaptics_clearpad_state_show, 0);
 static DEVICE_ATTR(fwstate, 0600, synaptics_clearpad_state_show, 0);
 static DEVICE_ATTR(fwflush, 0600, 0, synaptics_clearpad_fwflush_store);
 static DEVICE_ATTR(hwtest, 0600, 0, synaptics_clearpad_hwtest_store);
+static DEVICE_ATTR(notify_up_event, 0600, 0, synaptics_clearpad_notify_up_event_store);
 
 static struct attribute *synaptics_clearpad_attributes[] = {
 	&dev_attr_fwinfo.attr,
@@ -1751,6 +1771,7 @@ static struct attribute *synaptics_clearpad_attributes[] = {
 	&dev_attr_fwstate.attr,
 	&dev_attr_fwflush.attr,
 	&dev_attr_hwtest.attr,
+	&dev_attr_notify_up_event.attr,
 	NULL
 };
 
@@ -1767,6 +1788,8 @@ static int synaptics_clearpad_input_init(struct synaptics_clearpad *this)
 		return -ENOMEM;
 
 	input_set_drvdata(this->input, this);
+
+	this->notify_up_event = false;
 
 	this->input->open = synaptics_clearpad_device_open;
 	this->input->close = synaptics_clearpad_device_close;
