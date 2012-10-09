@@ -17,8 +17,12 @@ else
         make KLIB=$OBJ_DIR KLIB_BUILD=$OBJ_DIR ARCH=arm CROSS_COMPILE=$CROSS_COMPILE KERNEL_LOCAL_VERSION=$LOCALVERSION -j1
     fi
 
-    rm ./drivers/net/wireless/wl1251/wl1251.ko
-    rm ./drivers/net/wireless/wl1251/wl1251_sdio.ko
+    if [ -f ./drivers/net/wireless/wl1251/wl1251.ko ]; then
+        rm ./drivers/net/wireless/wl1251/wl1251.ko
+    fi
+    if [ -f ./drivers/net/wireless/wl1251/wl1251_sdio.ko ]; then
+        rm ./drivers/net/wireless/wl1251/wl1251_sdio.ko
+    fi
 
     cp -av ./compat/compat.ko $MODULE_DIR
     cp -av ./compat/compat_firmware_class.ko $MODULE_DIR
