@@ -683,6 +683,10 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 
 int calc_fb_offset(struct msm_fb_data_type *mfd, struct fb_info *fbi, int bpp)
 {
+#if 1
+	return fbi->var.xoffset * bpp +
+		fbi->var.yoffset * fbi->fix.line_length;
+#else
 	struct msm_panel_info *panel_info = &mfd->panel_info;
 	int remainder, yres, offset;
 
@@ -709,6 +713,7 @@ int calc_fb_offset(struct msm_fb_data_type *mfd, struct fb_info *fbi, int bpp)
 		fbi->fix.line_length + 2 * (PAGE_SIZE - remainder));
 	}
 	return offset;
+#endif
 }
 
 static void msm_fb_fillrect(struct fb_info *info,
