@@ -327,7 +327,15 @@ MODFLAGS	= -DMODULE
 CFLAGS_MODULE   = $(MODFLAGS)
 AFLAGS_MODULE   = $(MODFLAGS)
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
+ifeq ($(USE_CFLAGS_OPTION),y)
+CFLAGS_KERNEL	= -fgcse-lm -fgcse-sm -fsched-spec-load -fforce-addr \
+		  -ffast-math -fsingle-precision-constant \
+		  -fmodulo-sched -fmodulo-sched-allow-regmoves \
+		  -funswitch-loops -fpredictive-commoning -fgcse-after-reload \
+		  -march=armv7-a -mfpu=neon -ftree-vectorize -mtune=cortex-a8
+else
 CFLAGS_KERNEL	=
+endif
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
@@ -527,6 +535,8 @@ all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
+else ifdef CONFIG_CC_OPTIMIZE_FOR_SPEED
+KBUILD_CFLAGS	+= -O3
 else
 KBUILD_CFLAGS	+= -O2
 endif
