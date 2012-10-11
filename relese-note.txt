@@ -1,0 +1,108 @@
+
+  *** SO-03C Custom Kernel ***
+
+  1. 内容
+    Support ROM
+      SEMC系 ICS ROM
+      AOSP系 ICS ROM
+      AOSP系 JB ROM
+
+    CPU Freq
+      134MHz ～ 2016MHz
+
+    CPU Governor
+      Performance
+      PowerSave
+      UserSpace
+      Ondemand
+      Conservative
+      Interactive
+      Adaptive
+      LagFree
+      Intellidemand
+      Lazy
+      SavagedZen
+      Scary
+      OndemandX
+      SmartassV2 (default)
+      BrazilianWax
+      InteractiveX
+      Smartass
+
+    I/O Scheduler
+      cfq
+      bfq
+      sio
+      deadline
+      noop
+      vr (default)
+
+    Features
+      CPU Voltage Control support
+      bootanimation support
+          -> /system/media/bootanimation.zip or /data/local/bootanimation.zip
+      bootsound support
+          -> /system/media/bootsound.mp3
+      bootmovie support
+          -> /data/local/bootmovie.mp4
+      gz/gzip2/lzo/lzma/xz compressed ramdisk support
+      0% battery patch
+      ZRAM
+      ro.secure=0 (暫定)
+
+    Recovery
+      su,busybox導入対応 (advanced -> Root hacking)
+      Touch gesture対応
+      Key assign変更 HOME:決定 POWER:決定 BACK:戻る VOLUP:上 VOLDOWN:下
+      fastbootモードへのリブート追加
+
+    Others
+      kernel version 2.6.32.9 -> 2.6.32.27
+      Use compiler linaro 2012.07
+      Use Wireless LAN driver module from TI-OpenLink
+
+
+  2. 注意事項
+    使用すると保証が切れます
+    文鎮化の可能性があります
+
+    root取得について
+      CWM Based Xperia Ray Recoveryで "Advanced -> root hacking" は使わないでください
+
+
+  3. 導入方法:
+    fastbootからflashしてください。
+
+
+  4. その他
+    何があっても自己責任でお楽しみください。
+    また不具合等ありましたらご連絡ください。
+
+    不意にリブートが発生した場合
+    再起動後に/proc/last_kmsgを送ってくれると改善できる
+    かもしれません。
+
+
+  5. 更新履歴
+    V2.1.0  CPU Governor追加
+            I/O Scheduler追加
+            CPU Voltage control追加
+            CPU Overclock 2.0GHz
+            FB offset control追加
+            Triple buffer対応
+            ZRAM update
+
+    V2.0.3  Jelly Bean対応
+
+    V2.0.2  Ram diskの圧縮方式をlzmaに変更
+            jhash3 update
+            Recovery support
+            未使用のkernel module削除
+
+    V2.0.1  CPU Overclock 1.6GHz
+            CPU Overclock savefy guard追加
+            2 way call record対応
+            WLAN Driver update
+
+    V2.0.0  初版
+
