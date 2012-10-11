@@ -685,39 +685,40 @@ static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
 	return ret;
 }
 
+extern int sysctl_fixed_fb_offset;
 int calc_fb_offset(struct msm_fb_data_type *mfd, struct fb_info *fbi, int bpp)
 {
-#if 1
-	return fbi->var.xoffset * bpp +
-		fbi->var.yoffset * fbi->fix.line_length;
-#else
-	struct msm_panel_info *panel_info = &mfd->panel_info;
-	int remainder, yres, offset;
-
-	if (panel_info->mode2_yres != 0) {
-		yres = panel_info->mode2_yres;
-		remainder = (fbi->fix.line_length*yres) & (PAGE_SIZE - 1);
+	if (sysctl_fixed_fb_offset) {
+		return fbi->var.xoffset * bpp +
+			fbi->var.yoffset * fbi->fix.line_length;
 	} else {
-		yres = panel_info->yres;
-		remainder = (fbi->fix.line_length*yres) & (PAGE_SIZE - 1);
-	}
+		struct msm_panel_info *panel_info = &mfd->panel_info;
+		int remainder, yres, offset;
 
-	if (!remainder)
-		remainder = PAGE_SIZE;
+		if (panel_info->mode2_yres != 0) {
+			yres = panel_info->mode2_yres;
+			remainder = (fbi->fix.line_length*yres) & (PAGE_SIZE - 1);
+		} else {
+			yres = panel_info->yres;
+			remainder = (fbi->fix.line_length*yres) & (PAGE_SIZE - 1);
+		}
 
-	if (fbi->var.yoffset < yres) {
-		offset = (fbi->var.xoffset * bpp);
-				/* iBuf->buf +=	fbi->var.xoffset * bpp + 0 *
-				yres * fbi->fix.line_length; */
-	} else if (fbi->var.yoffset >= yres && fbi->var.yoffset < 2 * yres) {
-		offset = (fbi->var.xoffset * bpp + yres *
-		fbi->fix.line_length + PAGE_SIZE - remainder);
-	} else {
-		offset = (fbi->var.xoffset * bpp + 2 * yres *
-		fbi->fix.line_length + 2 * (PAGE_SIZE - remainder));
+		if (!remainder)
+			remainder = PAGE_SIZE;
+
+		if (fbi->var.yoffset < yres) {
+			offset = (fbi->var.xoffset * bpp);
+					/* iBuf->buf +=	fbi->var.xoffset * bpp + 0 *
+					yres * fbi->fix.line_length; */
+		} else if (fbi->var.yoffset >= yres && fbi->var.yoffset < 2 * yres) {
+			offset = (fbi->var.xoffset * bpp + yres *
+			fbi->fix.line_length + PAGE_SIZE - remainder);
+		} else {
+			offset = (fbi->var.xoffset * bpp + 2 * yres *
+			fbi->fix.line_length + 2 * (PAGE_SIZE - remainder));
+		}
+		return offset;
 	}
-	return offset;
-#endif
 }
 
 static void msm_fb_fillrect(struct fb_info *info,
