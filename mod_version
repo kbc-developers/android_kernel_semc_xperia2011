@@ -1,17 +1,17 @@
 ###########################################################
 # set kernel version
 ###########################################################
-TARGET_DEVICE=SO03C-ICS
+TARGET_DEVICE=SO03C
 BUILD_MOD=KBC
-BUILD_VERSION=V1.0.0
-BUILD_RECOVERY_VER=CWM-V6.0.1.2_r7
+BUILD_VERSION=V2.1.1
+BUILD_RECOVERY_VER=CWM-V6.0.1.2_r8
 
 
 ###########################################################
 # set build user and host
 ###########################################################
 export KBUILD_BUILD_VERSION="1"
-export KBUILD_BUILD_USER="Sakuramilk"
+export KBUILD_BUILD_USER="Ma34s3,Sakuramilk"
 export KBUILD_BUILD_HOST="KBC"
 
 
