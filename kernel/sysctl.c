@@ -216,6 +216,7 @@ int sysctl_build_target = 2;
 int sysctl_safe_mode = 0;
 int sysctl_boot_completed = 0;
 int sysctl_fixed_fb_offset = 1;
+int sysctl_old_overlay_blending = 1;
 unsigned int sysctl_feature_aosp = 0;
 
 static int proc_feature_aosp(struct ctl_table *table, int write, void __user *buffer, size_t *lenp, loff_t *ppos)
@@ -1090,6 +1091,14 @@ static struct ctl_table kern_table[] = {
 		.ctl_name	= CTL_UNNUMBERED,
 		.procname	= "fixed_fb_offset",
 		.data		= &sysctl_fixed_fb_offset,
+		.maxlen		= sizeof(int),
+		.mode		= 0640,
+		.proc_handler	= proc_dointvec,
+	},
+	{
+		.ctl_name	= CTL_UNNUMBERED,
+		.procname	= "old_overlay_blending",
+		.data		= &sysctl_old_overlay_blending,
 		.maxlen		= sizeof(int),
 		.mode		= 0640,
 		.proc_handler	= proc_dointvec,

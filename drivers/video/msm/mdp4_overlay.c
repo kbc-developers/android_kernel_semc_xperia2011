@@ -43,6 +43,8 @@
 #include "msm_fb.h"
 #include "mdp4.h"
 
+extern int sysctl_old_overlay_blending;
+
 
 struct mdp4_overlay_ctrl {
 	struct mdp4_pipe_desc ov_pipe[OVERLAY_PIPE_MAX];/* 4 */
@@ -999,64 +1001,70 @@ void mdp4_mixer_blend_setup(struct mdp4_overlay_pipe *pipe)
 		return;
 	}
 
-	if (bg_pipe->pipe_type == OVERLAY_TYPE_BF &&
-	    pipe->mixer_stage > MDP4_MIXER_STAGE0) {
-		bg_pipe = mdp4_overlay_stage_pipe(pipe->mixer_num,
-						  MDP4_MIXER_STAGE0);
-	}
+	if (!sysctl_old_overlay_blending) {
+		if (bg_pipe->pipe_type == OVERLAY_TYPE_BF &&
+		    pipe->mixer_stage > MDP4_MIXER_STAGE0) {
+			bg_pipe = mdp4_overlay_stage_pipe(pipe->mixer_num,
+							  MDP4_MIXER_STAGE0);
+		}
 
-	if (pipe->alpha_enable) {
-		/* alpha channel is lost on VG pipe when downscaling */
-		if (pipe->pipe_type == OVERLAY_TYPE_VIDEO &&
-		    (pipe->dst_w < pipe->src_w || pipe->dst_h < pipe->src_h))
-			fg_alpha = 0;
-		else
-			fg_alpha = 1;
-	}
+		if (pipe->alpha_enable) {
+			/* alpha channel is lost on VG pipe when downscaling */
+			if (pipe->pipe_type == OVERLAY_TYPE_VIDEO &&
+			    (pipe->dst_w < pipe->src_w || pipe->dst_h < pipe->src_h))
+				fg_alpha = 0;
+			else
+				fg_alpha = 1;
+		}
 
-	if (!fg_alpha && bg_pipe && bg_pipe->alpha_enable) {
-		struct mdp4_overlay_pipe *tmp;
-		int stage;
+		if (!fg_alpha && bg_pipe && bg_pipe->alpha_enable) {
+			struct mdp4_overlay_pipe *tmp;
+			int stage;
 
-		bg_alpha = 1;
-		/* check all bg layers are opaque to propagate bg alpha */
-		stage = bg_pipe->mixer_stage + 1;
-		for (; stage < pipe->mixer_stage; stage++) {
-			tmp = mdp4_overlay_stage_pipe(pipe->mixer_num, stage);
-			if (!tmp || tmp->alpha_enable || tmp->is_fg) {
-				bg_alpha = 0;
-				break;
+			bg_alpha = 1;
+			/* check all bg layers are opaque to propagate bg alpha */
+			stage = bg_pipe->mixer_stage + 1;
+			for (; stage < pipe->mixer_stage; stage++) {
+				tmp = mdp4_overlay_stage_pipe(pipe->mixer_num, stage);
+				if (!tmp || tmp->alpha_enable || tmp->is_fg) {
+					bg_alpha = 0;
+					break;
+				}
 			}
 		}
 	}
 
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 
-	blend_op = (MDP4_BLEND_FG_ALPHA_FG_CONST |
-		    MDP4_BLEND_BG_ALPHA_BG_CONST);
-	outpdw(overlay_base + off + 0x108, pipe->alpha);
-	outpdw(overlay_base + off + 0x10c, 0xff - pipe->alpha);
-	fg_color3_out = 1; /* keep fg alpha by default */
+	if (sysctl_old_overlay_blending) {
+		blend_op = 0;
+	} else {
+		blend_op = (MDP4_BLEND_FG_ALPHA_FG_CONST |
+			    MDP4_BLEND_BG_ALPHA_BG_CONST);
+		outpdw(overlay_base + off + 0x108, pipe->alpha);
+		outpdw(overlay_base + off + 0x10c, 0xff - pipe->alpha);
+		fg_color3_out = 1; /* keep fg alpha by default */
 
-	if (pipe->is_fg) {
-		if (pipe->alpha == 0xff &&
-		    bg_pipe && bg_pipe->pipe_num <= OVERLAY_PIPE_RGB2) {
-			rgb_base = MDP_BASE + MDP4_RGB_BASE;
-			rgb_base += MDP4_RGB_OFF * bg_pipe->pipe_num;
-			rgb_src_format = inpdw(rgb_base + 0x50);
-			rgb_src_format |= MDP4_FORMAT_SOLID_FILL;
-			outpdw(rgb_base + 0x50, rgb_src_format);
-			outpdw(rgb_base + 0x1008, constant_color);
+		if (pipe->is_fg) {
+			if (pipe->alpha == 0xff &&
+			    bg_pipe && bg_pipe->pipe_num <= OVERLAY_PIPE_RGB2) {
+				rgb_base = MDP_BASE + MDP4_RGB_BASE;
+				rgb_base += MDP4_RGB_OFF * bg_pipe->pipe_num;
+				rgb_src_format = inpdw(rgb_base + 0x50);
+				rgb_src_format |= MDP4_FORMAT_SOLID_FILL;
+				outpdw(rgb_base + 0x50, rgb_src_format);
+				outpdw(rgb_base + 0x1008, constant_color);
+			}
+		} else if (fg_alpha) {
+			blend_op = (MDP4_BLEND_BG_ALPHA_FG_PIXEL |
+				    MDP4_BLEND_BG_INV_ALPHA);
+			fg_color3_out = 1; /* keep fg alpha */
+		} else if (bg_alpha) {
+			blend_op = (MDP4_BLEND_BG_ALPHA_BG_PIXEL |
+				    MDP4_BLEND_FG_ALPHA_BG_PIXEL |
+				    MDP4_BLEND_FG_INV_ALPHA);
+			fg_color3_out = 0; /* keep bg alpha */
 		}
-	} else if (fg_alpha) {
-		blend_op = (MDP4_BLEND_BG_ALPHA_FG_PIXEL |
-			    MDP4_BLEND_BG_INV_ALPHA);
-		fg_color3_out = 1; /* keep fg alpha */
-	} else if (bg_alpha) {
-		blend_op = (MDP4_BLEND_BG_ALPHA_BG_PIXEL |
-			    MDP4_BLEND_FG_ALPHA_BG_PIXEL |
-			    MDP4_BLEND_FG_INV_ALPHA);
-		fg_color3_out = 0; /* keep bg alpha */
 	}
 
 	if (bg_pipe->alpha_enable && pipe->alpha_enable) {
@@ -1072,32 +1080,43 @@ void mdp4_mixer_blend_setup(struct mdp4_overlay_pipe *pipe)
 		/* not ARGB on both pipe */
 		blend_op |= (MDP4_BLEND_FG_ALPHA_FG_CONST |
 					MDP4_BLEND_BG_ALPHA_BG_CONST);
-		if (pipe->is_fg) {
-			transp_color_key(pipe->src_format, pipe->transp,
-					&c0, &c1, &c2);
-			/* Fg blocked */
-			blend_op |= MDP4_BLEND_FG_TRANSP_EN;
-			/* lower limit */
-			outpdw(overlay_base + off + 0x110,
-					(c1 << 16 | c0));/* low */
-			outpdw(overlay_base + off + 0x114, c2);/* low */
-			/* upper limit */
-			outpdw(overlay_base + off + 0x118,
-					(c1 << 16 | c0));
-			outpdw(overlay_base + off + 0x11c, c2);
-		} else if (bg_pipe) {
-			transp_color_key(bg_pipe->src_format,
-				pipe->transp, &c0, &c1, &c2);
-			/* bg blocked */
-			blend_op |= MDP4_BLEND_BG_TRANSP_EN;
-			/* lower limit */
-			outpdw(overlay_base + 0x180,
-					(c1 << 16 | c0));/* low */
-			outpdw(overlay_base + 0x184, c2);/* low */
-			/* upper limit */
-			outpdw(overlay_base + 0x188,
-					(c1 << 16 | c0));/* high */
-			outpdw(overlay_base + 0x18c, c2);/* high */
+
+		if (sysctl_old_overlay_blending) {
+			if (pipe->is_fg) {
+				outpdw(overlay_base + off + 0x108, pipe->alpha);
+				outpdw(overlay_base + off + 0x10c, 0xff - pipe->alpha);
+			} else {
+				outpdw(overlay_base + off + 0x108, 0xff - pipe->alpha);
+				outpdw(overlay_base + off + 0x10c, pipe->alpha);
+			}
+		} else {
+			if (pipe->is_fg) {
+				transp_color_key(pipe->src_format, pipe->transp,
+						&c0, &c1, &c2);
+				/* Fg blocked */
+				blend_op |= MDP4_BLEND_FG_TRANSP_EN;
+				/* lower limit */
+				outpdw(overlay_base + off + 0x110,
+						(c1 << 16 | c0));/* low */
+				outpdw(overlay_base + off + 0x114, c2);/* low */
+				/* upper limit */
+				outpdw(overlay_base + off + 0x118,
+						(c1 << 16 | c0));
+				outpdw(overlay_base + off + 0x11c, c2);
+			} else if (bg_pipe) {
+				transp_color_key(bg_pipe->src_format,
+					pipe->transp, &c0, &c1, &c2);
+				/* bg blocked */
+				blend_op |= MDP4_BLEND_BG_TRANSP_EN;
+				/* lower limit */
+				outpdw(overlay_base + 0x180,
+						(c1 << 16 | c0));/* low */
+				outpdw(overlay_base + 0x184, c2);/* low */
+				/* upper limit */
+				outpdw(overlay_base + 0x188,
+						(c1 << 16 | c0));/* high */
+				outpdw(overlay_base + 0x18c, c2);/* high */
+			}
 		}
 
 		if (pipe->transp != MDP_TRANSP_NOP) {
