@@ -3,7 +3,7 @@
 ###########################################################
 TARGET_DEVICE=SO03C
 BUILD_MOD=KBC
-BUILD_VERSION=V2.1.1
+BUILD_VERSION=V2.1.2
 BUILD_RECOVERY_VER=CWM-V6.0.1.2_r8
 
 
