@@ -151,16 +151,15 @@ cd $BIN_DIR
 if [ -d tmp ]; then
     rm -rf tmp
 fi
-mkdir -p ./tmp/META-INF/com/google/android
-cp $IMAGE_NAME.img ./tmp/
-cp $KERNEL_DIR/release-tools/update-binary ./tmp/META-INF/com/google/android/
-sed -e "s/@VERSION/$BUILD_LOCALVERSION/g" $KERNEL_DIR/release-tools/updater-script-$IMAGE_NAME.sed > ./tmp/META-INF/com/google/android/updater-script
-cd tmp && zip -rq ../cwm.zip ./* && cd ../
-SIGNAPK_DIR=$KERNEL_DIR/release-tools/signapk
-java -jar $SIGNAPK_DIR/signapk.jar $SIGNAPK_DIR/testkey.x509.pem $SIGNAPK_DIR/testkey.pk8 cwm.zip $BUILD_LOCALVERSION-$IMAGE_NAME-signed.zip
-rm cwm.zip
-rm -rf tmp
-echo "  $BIN_DIR/$BUILD_LOCALVERSION-$IMAGE_NAME-signed.zip"
+mkdir -p ./tmp/$BUILD_LOCALVERSION-$IMAGE_NAME
+cp $IMAGE_NAME.img ./tmp/$BUILD_LOCALVERSION-$IMAGE_NAME
+cp $KERNEL_DIR/release-note.txt ./tmp/$BUILD_LOCALVERSION-$IMAGE_NAME/
+git log > ./tmp/$BUILD_LOCALVERSION-$IMAGE_NAME/kernel-commitlog.txt
+cd $KERNEL_DIR/$INITRAMFS_SRC_DIR
+git log > $KERNEL_DIR/$BIN_DIR/tmp/$BUILD_LOCALVERSION-$IMAGE_NAME/ramdisk-commitlog.txt
+cd $KERNEL_DIR/$BIN_DIR/tmp
+tar -jcvf ../$BUILD_LOCALVERSION-$IMAGE_NAME.tar.bz2 $BUILD_LOCALVERSION-$IMAGE_NAME
+echo "  $BIN_DIR/$BUILD_LOCALVERSION-$IMAGE_NAME.tar.bz2"
 
 cd $KERNEL_DIR
 echo ""
